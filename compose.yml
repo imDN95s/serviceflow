@@ -1,0 +1,53 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${SERVICEFLOW_DB_NAME}
+      POSTGRES_USER: ${SERVICEFLOW_DB_USER}
+      POSTGRES_PASSWORD: ${SERVICEFLOW_DB_PASSWORD}
+    ports:
+      - "${SERVICEFLOW_DB_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${SERVICEFLOW_DB_USER} -d ${SERVICEFLOW_DB_NAME}"
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${SERVICEFLOW_DB_NAME}
+      DB_USERNAME: ${SERVICEFLOW_DB_USER}
+      DB_PASSWORD: ${SERVICEFLOW_DB_PASSWORD}
+    ports:
+      - "${SERVICEFLOW_BACKEND_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "--fail",
+          "--silent",
+          "http://localhost:8080/actuator/health"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  postgres-data:

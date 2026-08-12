@@ -11,7 +11,7 @@ RUN chmod +x gradlew
 COPY src src
 COPY config config
 
-RUN ./gradlew bootJar --no-daemon
+RUN ./gradlew bootJar --no-daemon  saadsdsa
 
 
 FROM eclipse-temurin:21-jre-alpine AS runtime
